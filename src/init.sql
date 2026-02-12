@@ -5,15 +5,16 @@ CREATE TABLE IF NOT EXISTS budgets (
   address TEXT,
   discount NUMERIC DEFAULT 0,
   extra_fee NUMERIC DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS items (
   id SERIAL PRIMARY KEY,
   budget_id INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
-  type TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('MATERIAL','MAO_DE_OBRA','SERVICO')),
   name TEXT NOT NULL,
-  qty NUMERIC NOT NULL,
-  unit_price NUMERIC NOT NULL,
+  qty NUMERIC NOT NULL CHECK (qty >= 0),
+  unit_price NUMERIC NOT NULL CHECK (unit_price >= 0),
   created_at TIMESTAMP DEFAULT NOW()
 );
