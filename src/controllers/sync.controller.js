@@ -79,11 +79,24 @@ export async function syncPush(req, res) {
     const { budgets = [], items = [] } = req.body;
 
     for (const budget of budgets) {
-        await upsertBudget(budget);
+        try {
+            // Default optional fields to null to avoid undefined SQL errors
+            budget.address = budget.address ?? null;
+            budget.deleted_at = budget.deleted_at ?? null;
+            await upsertBudget(budget);
+        } catch (error) {
+            console.error(`Erro ao sincronizar budget ${budget.id}:`, error);
+        }
     }
 
     for (const item of items) {
-        await upsertItem(item);
+        try {
+            // Default optional fields to null
+            item.deleted_at = item.deleted_at ?? null;
+            await upsertItem(item);
+        } catch (error) {
+            console.error(`Erro ao sincronizar item ${item.id}:`, error);
+        }
     }
 
     res.json({ success: true });
@@ -96,30 +109,35 @@ export async function syncPush(req, res) {
 export async function syncPull(req, res) {
     const since = req.query.since;
 
+    console.log('Sync Pull requested since:', since);
+
     if (!since) {
         return res.status(400).json({ error: "Parametro 'since' é obrigatório" });
     }
 
-    const budgets = await pool.query(
-        `
-    SELECT * FROM budgets
-    WHERE updated_at > $1
-    OR deleted_at IS NOT NULL
-    `,
-        [since]
-    );
+    try {
+        const budgets = await pool.query(
+            `
+        SELECT * FROM budgets
+        WHERE updated_at > $1
+        `,
+            [since]
+        );
 
-    const items = await pool.query(
-        `
-    SELECT * FROM items
-    WHERE updated_at > $1
-    OR deleted_at IS NOT NULL
-    `,
-        [since]
-    );
+        const items = await pool.query(
+            `
+        SELECT * FROM items
+        WHERE updated_at > $1
+        `,
+            [since]
+        );
 
-    res.json({
-        budgets: budgets.rows,
-        items: items.rows
-    });
+        res.json({
+            budgets: budgets.rows,
+            items: items.rows
+        });
+    } catch (error) {
+        console.error('Erro no syncPull:', error);
+        throw error; // Let asyncHandler handle the 500 response
+    }
 }
