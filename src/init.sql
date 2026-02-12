@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS budgets (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  client_name TEXT NOT NULL,
+  address TEXT,
+  discount NUMERIC DEFAULT 0,
+  extra_fee NUMERIC DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS items (
+  id SERIAL PRIMARY KEY,
+  budget_id INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  qty NUMERIC NOT NULL,
+  unit_price NUMERIC NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
