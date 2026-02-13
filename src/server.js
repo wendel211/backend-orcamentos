@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import syncRoutes from "./routes/sync.routes.js";
+import budgetRoutes from "./routes/budget.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/sync", syncRoutes);
+app.use("/api/budgets", budgetRoutes);
 
 app.get("/", (req, res) => {
     res.json({ status: "API Sync Offline-First funcionando" });
