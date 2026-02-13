@@ -6,7 +6,7 @@ import pool from "../db.js";
 
 export async function updateBudget(req, res) {
     const { id } = req.params;
-    const { title, client_name, address, discount, extra_fee } = req.body;
+    const { title, client_name, address, discount, extra_fee, status } = req.body;
     const now = new Date().toISOString();
 
     const result = await pool.query(
@@ -16,10 +16,11 @@ export async function updateBudget(req, res) {
             address = $3,
             discount = COALESCE($4, discount),
             extra_fee = COALESCE($5, extra_fee),
-            updated_at = $6
-        WHERE id = $7 AND deleted_at IS NULL
+            status = COALESCE($6, status),
+            updated_at = $7
+        WHERE id = $8 AND deleted_at IS NULL
         RETURNING *`,
-        [title, client_name, address ?? null, discount, extra_fee, now, id]
+        [title, client_name, address ?? null, discount, extra_fee, status, now, id]
     );
 
     if (result.rows.length === 0) {

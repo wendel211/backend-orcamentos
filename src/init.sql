@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS budgets (
   extra_fee NUMERIC DEFAULT 0,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL,
-  deleted_at TIMESTAMP
+  deleted_at TIMESTAMP,
+  status TEXT DEFAULT 'EM_ANALISE'
 );
 
 CREATE TABLE IF NOT EXISTS items (

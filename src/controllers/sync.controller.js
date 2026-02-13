@@ -14,14 +14,15 @@ async function upsertBudget(budget) {
         extra_fee,
         created_at,
         updated_at,
-        deleted_at
+        deleted_at,
+        status
     } = budget;
 
     await pool.query(
         `
     INSERT INTO budgets
-    (id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    (id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
     ON CONFLICT (id)
     DO UPDATE SET
       title = EXCLUDED.title,
@@ -30,9 +31,10 @@ async function upsertBudget(budget) {
       discount = EXCLUDED.discount,
       extra_fee = EXCLUDED.extra_fee,
       updated_at = EXCLUDED.updated_at,
-      deleted_at = EXCLUDED.deleted_at
+      deleted_at = EXCLUDED.deleted_at,
+      status = EXCLUDED.status
     `,
-        [id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at]
+        [id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status ?? 'EM_ANALISE']
     );
 }
 
