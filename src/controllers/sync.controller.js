@@ -81,7 +81,7 @@ export async function syncPush(req, res) {
     const { budgets = [], items = [], userId } = req.body;
 
     if (!userId) {
-        return res.status(400).json({ error: "userId é obrigatório para sincronização" });
+        return res.status(400).json({ error: "O campo 'userId' é obrigatório no corpo da requisição (syncPush)" });
     }
 
     for (const budget of budgets) {
@@ -115,8 +115,11 @@ export async function syncPull(req, res) {
 
     console.log(`Sync Pull requested for user ${userId} since: ${since}`);
 
-    if (!since || !userId) {
-        return res.status(400).json({ error: "Parametros 'since' e 'userId' são obrigatórios" });
+    if (!since) {
+        return res.status(400).json({ error: "O parâmetro 'since' é obrigatório (syncPull)" });
+    }
+    if (!userId) {
+        return res.status(400).json({ error: "O parâmetro 'userId' é obrigatório (syncPull)" });
     }
 
     try {

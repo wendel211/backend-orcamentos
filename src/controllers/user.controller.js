@@ -35,7 +35,7 @@ export const register = async (req, res) => {
         res.status(201).json(newUser.rows[0]);
     } catch (error) {
         console.error("Erro no registro:", error);
-        res.status(500).json({ error: "Erro interno do servidor ao cadastrar" });
+        res.status(500).json({ error: "Erro interno do servidor ao cadastrar", details: error.message });
     }
 };
 

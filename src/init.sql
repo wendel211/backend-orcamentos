@@ -34,3 +34,7 @@ CREATE TABLE IF NOT EXISTS items (
   updated_at TIMESTAMP NOT NULL,
   deleted_at TIMESTAMP
 );
+
+-- Migrações de segurança para tabelas existentes
+ALTER TABLE budgets ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE items ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
