@@ -4,7 +4,7 @@ import pool from "../db.js";
    UPSERT BUDGET
 ============================ */
 
-async function upsertBudget(budget) {
+async function upsertBudget(budget, userId) {
     const {
         id,
         title,
@@ -21,8 +21,8 @@ async function upsertBudget(budget) {
     await pool.query(
         `
     INSERT INTO budgets
-    (id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    (id, user_id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
     ON CONFLICT (id)
     DO UPDATE SET
       title = EXCLUDED.title,
@@ -34,7 +34,7 @@ async function upsertBudget(budget) {
       deleted_at = EXCLUDED.deleted_at,
       status = EXCLUDED.status
     `,
-        [id, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status ?? 'EM_ANALISE']
+        [id, userId, title, client_name, address, discount, extra_fee, created_at, updated_at, deleted_at, status ?? 'EM_ANALISE']
     );
 }
 
@@ -42,7 +42,7 @@ async function upsertBudget(budget) {
    UPSERT ITEM
 ============================ */
 
-async function upsertItem(item) {
+async function upsertItem(item, userId) {
     const {
         id,
         budget_id,
@@ -58,8 +58,8 @@ async function upsertItem(item) {
     await pool.query(
         `
     INSERT INTO items
-    (id, budget_id, type, name, qty, unit_price, created_at, updated_at, deleted_at)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    (id, user_id, budget_id, type, name, qty, unit_price, created_at, updated_at, deleted_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
     ON CONFLICT (id)
     DO UPDATE SET
       type = EXCLUDED.type,
@@ -69,7 +69,7 @@ async function upsertItem(item) {
       updated_at = EXCLUDED.updated_at,
       deleted_at = EXCLUDED.deleted_at
     `,
-        [id, budget_id, type, name, qty, unit_price, created_at, updated_at, deleted_at]
+        [id, userId, budget_id, type, name, qty, unit_price, created_at, updated_at, deleted_at]
     );
 }
 
@@ -78,14 +78,17 @@ async function upsertItem(item) {
 ============================ */
 
 export async function syncPush(req, res) {
-    const { budgets = [], items = [] } = req.body;
+    const { budgets = [], items = [], userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: "userId é obrigatório para sincronização" });
+    }
 
     for (const budget of budgets) {
         try {
-            // Default optional fields to null to avoid undefined SQL errors
             budget.address = budget.address ?? null;
             budget.deleted_at = budget.deleted_at ?? null;
-            await upsertBudget(budget);
+            await upsertBudget(budget, userId);
         } catch (error) {
             console.error(`Erro ao sincronizar budget ${budget.id}:`, error);
         }
@@ -93,9 +96,8 @@ export async function syncPush(req, res) {
 
     for (const item of items) {
         try {
-            // Default optional fields to null
             item.deleted_at = item.deleted_at ?? null;
-            await upsertItem(item);
+            await upsertItem(item, userId);
         } catch (error) {
             console.error(`Erro ao sincronizar item ${item.id}:`, error);
         }
@@ -109,29 +111,29 @@ export async function syncPush(req, res) {
 ============================ */
 
 export async function syncPull(req, res) {
-    const since = req.query.since;
+    const { since, userId } = req.query;
 
-    console.log('Sync Pull requested since:', since);
+    console.log(`Sync Pull requested for user ${userId} since: ${since}`);
 
-    if (!since) {
-        return res.status(400).json({ error: "Parametro 'since' é obrigatório" });
+    if (!since || !userId) {
+        return res.status(400).json({ error: "Parametros 'since' e 'userId' são obrigatórios" });
     }
 
     try {
         const budgets = await pool.query(
             `
         SELECT * FROM budgets
-        WHERE updated_at > $1
+        WHERE user_id = $1 AND updated_at > $2
         `,
-            [since]
+            [userId, since]
         );
 
         const items = await pool.query(
             `
         SELECT * FROM items
-        WHERE updated_at > $1
+        WHERE user_id = $1 AND updated_at > $2
         `,
-            [since]
+            [userId, since]
         );
 
         res.json({
@@ -140,6 +142,6 @@ export async function syncPull(req, res) {
         });
     } catch (error) {
         console.error('Erro no syncPull:', error);
-        throw error; // Let asyncHandler handle the 500 response
+        throw error;
     }
 }
