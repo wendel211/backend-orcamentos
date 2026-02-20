@@ -1,15 +1,21 @@
 export const checkApiKey = (req, res, next) => {
-    // Buscamos a chave no cabeçalho 'x-api-key'
-    const apiKey = req.header('x-api-key');
-    const secretKey = process.env.API_KEY;
+    // Pegamos a chave do header (garantindo que não haja espaços em branco)
+    const apiKey = req.header('x-api-key')?.trim();
+    const secretKey = process.env.API_KEY?.trim();
 
-    // Se a chave não existir ou for diferente da definida no servidor
+    // LOGS DE DIAGNÓSTICO (Aparecerão no 'fly logs')
+    console.log('--- Verificação de Segurança ---');
+    console.log('Header x-api-key recebido:', apiKey ? 'Presente' : 'AUSENTE');
+
+    // Verificação de segurança
     if (!apiKey || apiKey !== secretKey) {
+        console.error('ERRO: Chaves não conferem!');
         return res.status(401).json({
-            error: "Acesso negado. Chave de API inválida ou ausente."
+            error: "Acesso negado. Chave de API inválida ou ausente.",
+            hint: "Verifique o header x-api-key"
         });
     }
 
-    // Se estiver tudo certo, segue para a rota
+    console.log('AUTORIZADO: Chave válida.');
     next();
 };
